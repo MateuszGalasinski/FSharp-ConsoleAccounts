@@ -1,37 +1,28 @@
 module Auditing
-open System.IO
 open System
 open Domain
 open Operations
+open FileRepository
 
-let formatMessage account message = 
-    sprintf "Account %s|balance:%f : %s" (account.Id.ToString()) account.Balance message
+let formatMessage (account:Account) transaction = 
+    sprintf "Account %s\n   Balance: %f \n  Latest transaction %s" (account.Id.ToString()) account.Balance
+        (sprintf "%M$ %s %s" transaction.Amount (transaction.Operation.ToString()) (transaction.Timestamp.ToString "dd/MM/yyyy"))
 
-let logToFile (account:Account) message = 
-    let dirPath = Path.Combine("C:\temp\learnfs\capstone2", account.Owner.Name)
-    Directory.CreateDirectory dirPath |> ignore
-    File.WriteAllText(
-        Path.ChangeExtension(
-            Path.Combine(dirPath, account.Id.ToString()),
-            "txt"),
-        formatMessage account message)
+let logToConsole (account:Account) transaction = 
+    Console.WriteLine (formatMessage account transaction)
 
-let logToConsole (account:Account) message = 
-    Console.WriteLine (formatMessage account message)
-    
-let account = 
-    {
-        Id = Guid()
-        Balance = decimal 46.0
-        Owner = 
-            {
-                Name = "Test"
-            }
-    }
-let auditAs auditMethod operation (amount:decimal) (account:Account) = 
+let auditAs auditMethod operation amount (account:Account) = 
     let result = operation amount account
-    if result = account then
-        auditMethod result ("Operation was rejected :(")
+    if fst result = account then
+        auditMethod <|| result
     else
-        auditMethod result (sprintf "Operation %s success! Amount %M" (operation.GetType().Name) amount)
-    result
+        auditMethod <|| result
+    fst result
+
+let consoleAudit = auditAs logToConsole 
+let withdrawWithConsole = consoleAudit withdraw 
+let depositWithConsole = consoleAudit deposit 
+
+let fileAudit = auditAs writeTransaction 
+let withdrawWithFile = fileAudit withdraw 
+let depositWithFile = fileAudit deposit 

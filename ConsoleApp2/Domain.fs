@@ -11,3 +11,11 @@ type Account =
         Balance: decimal
         Owner: Customer
     }
+type Operation = Deposit | Withdraw | Exit | Fail
+type Transaction =
+    {
+        Id: Guid
+        Amount: decimal
+        Operation: Operation
+        Timestamp: DateTime
+    }

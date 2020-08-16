@@ -3,28 +3,40 @@ open Domain
 open Operations
 open Auditing
 
-let consoleAudit = auditAs logToConsole 
-let withdrawWithConsole = consoleAudit withdraw 
-let depositWithConsole = consoleAudit deposit 
+let depositAudit = depositWithFile
+let withdrawAudit = withdrawWithFile
+
+let isValidCommand char =
+    [ 'd'; 'w'; 'x']
+    |> Seq.contains char
+
+let getAmount (command:char) = 
+    if ['d'; 'w'] |> Seq.contains command then
+        Console.WriteLine "\nSpecify amount: "
+        (command, Decimal.Parse (Console.ReadLine()))
+    else
+        (command, 0m)
+
+let processCommand currentAccount (command, amount) = 
+    match command with
+    | 'd' -> currentAccount |> depositAudit amount
+    | 'w' -> currentAccount |> withdrawAudit amount
+    | 'x' -> Environment.Exit 0; currentAccount
+    | _ -> currentAccount
 
 [<EntryPoint>]
 let main argv =
-    let mutable account:Account = 
-        {
-            Balance = 0m
-            Id = Guid()
-            Owner =
-            {
-                Name = ""
-            }
-        }
-    let amount = 10m
-    while true do
-        Console.WriteLine "Input Key:"
-        let chosenAction = Console.ReadKey().KeyChar
-        match chosenAction with
-        | 'd' -> account <- account |> depositWithConsole amount
-        | 'w' -> account <- account |> withdrawWithConsole amount
-        | 'x' -> Environment.Exit 0
-        | _ -> ()
-    1
+    let openingAccount = 
+        { Owner = {Name = "MG"}; Balance = 0m; Id = Guid.Empty}
+
+    seq {
+        while true do
+            Console.Write "(d)eposit, (w)ithdraw or e(x)it: "
+            yield Console.ReadKey().KeyChar
+    }
+    |> Seq.filter isValidCommand
+    |> Seq.takeWhile (fun cmd -> cmd <> 'x')
+    |> Seq.map getAmount
+    |> Seq.fold processCommand openingAccount
+    |> ignore
+    0
