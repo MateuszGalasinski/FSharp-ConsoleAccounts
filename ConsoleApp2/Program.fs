@@ -2,6 +2,7 @@
 open Domain
 open Operations
 open Auditing
+open FileRepository
 
 let depositAudit = depositWithFile
 let withdrawAudit = withdrawWithFile
@@ -18,6 +19,7 @@ let getAmount (command:char) =
         (command, 0m)
 
 let processCommand currentAccount (command, amount) = 
+    printfn "%s" (currentAccount.ToString())
     match command with
     | 'd' -> currentAccount |> depositAudit amount
     | 'w' -> currentAccount |> withdrawAudit amount
@@ -27,7 +29,9 @@ let processCommand currentAccount (command, amount) =
 [<EntryPoint>]
 let main argv =
     let openingAccount = 
-        { Owner = {Name = "MG"}; Balance = 0m; Id = Guid.Empty}
+        findTransactionsOnDisk "MG"
+        ||> loadAccount { Name = "MG"}
+        // { Owner = {Name = "MG"}; Balance = 0m; Id = Guid.Empty}
 
     seq {
         while true do

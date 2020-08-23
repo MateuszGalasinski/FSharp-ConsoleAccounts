@@ -12,12 +12,15 @@ let logToConsole (account:Account) transaction =
     Console.WriteLine (formatMessage account transaction)
 
 let auditAs auditMethod operation amount (account:Account) = 
-    let result = operation amount account
-    if fst result = account then
-        auditMethod <|| result
-    else
-        auditMethod <|| result
-    fst result
+    let updatedAccount, operationResult = operation amount account
+    let transaction = {
+        Id = Guid.NewGuid()
+        Amount = amount
+        Operation = operationResult
+        Timestamp = DateTime.Now
+    }
+    auditMethod account transaction
+    updatedAccount
 
 let consoleAudit = auditAs logToConsole 
 let withdrawWithConsole = consoleAudit withdraw 

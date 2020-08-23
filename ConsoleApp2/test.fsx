@@ -1,11 +1,12 @@
 ﻿#load "Domain.fs" 
 #load "Operations.fs" 
+#load "FileRepository.fs" 
 #load "Auditing.fs" 
-open System.IO
 open System
 open Domain
 open Operations
 open Auditing
+open FileRepository
 
 let consoleAudit = auditAs logToConsole 
 let withdrawWithConsole = consoleAudit withdraw 
@@ -27,18 +28,42 @@ let generateAmount command =
     | 'w' -> ('w', 25m)
     | _ -> ('x', 0m)
 
-let processCommand currentAccount (command, amount) = 
-    match command with
-    | 'd' -> currentAccount |> depositWithConsole amount
-    | 'w' -> currentAccount |> withdrawWithConsole amount
-    | 'x' -> Environment.Exit 0; account
-    | _ -> currentAccount
 
-let account = 
-    let commands = [ 'd'; 'w'; 'z'; 'f'; 'd'; 'x']
+let loadAccount owner accountId transactions = 
+    let initAccount : Account = { Id = accountId
+                                  Balance = 0m
+                                  Owner = owner}
+    transactions
+    |> Seq.sortBy (fun t -> t.Timestamp)
+    |> Seq.fold (fun account txn -> 
+        match txn.Operation with 
+        | Operation.Deposit -> deposit txn.Amount account |> fst
+        | Operation.Withdraw -> withdraw txn.Amount account |> fst
+        | Operation.Exit -> account
+        | Operation.Fail -> account
+        ) initAccount
 
-    commands
-    |> Seq.filter isValidCommand
-    |> Seq.takeWhile (not << isStopCommand)
-    |> Seq.map generateAmount
-    |> Seq.fold processCommand openingAccount
+loadAccount { Name = "ASD" } (Guid.NewGuid()) [
+    {
+        Id = Guid.NewGuid()
+        Amount = 12.3123m
+        Operation = Operation.Deposit
+        Timestamp = DateTime.Now
+    };
+    {
+        Id = Guid.NewGuid()
+        Amount = 9.2m
+        Operation = Operation.Exit
+        Timestamp = DateTime.Now
+    };
+    {
+        Id = Guid.NewGuid()
+        Amount = 22.2m
+        Operation = Operation.Withdraw
+        Timestamp = DateTime.Now
+    };
+]
+
+#load "FileRepository.fs" 
+open FileRepository
+snd (findTransactionsOnDisk "MG") |> Seq.iter (fun t -> printf "%s" (t.ToString()))
