@@ -1,4 +1,4 @@
-﻿#load "Domain.fs" 
+﻿#load "../Domain.fs" 
 #load "Operations.fs" 
 #load "FileRepository.fs" 
 #load "Auditing.fs" 
