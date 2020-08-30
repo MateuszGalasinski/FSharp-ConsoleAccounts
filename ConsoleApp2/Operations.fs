@@ -1,29 +1,34 @@
 module Operations
 open Domain
 
+let classifyAccount (account:Account) = 
+    if account.Balance >= 0m then
+        InCredit(CreditAccount account)
+    else
+        Overdrawn account
+
 let deposit amount account = 
-    {   account with
-            Balance = account.Balance + amount
-    }, Deposit
+    let account = 
+        match account with 
+        | InCredit (CreditAccount account) -> account
+        | Overdrawn account -> account
+    { account with Balance = account.Balance + amount }
+    |> classifyAccount
 
-let withdraw amount account = 
-    if account.Balance >= amount then
-        {   account with
-                Balance = account.Balance - amount
-        }, Withdraw
-    else 
-        account, Fail
+let withdraw amount (CreditAccount account) = 
+    { account with Balance = account.Balance - amount } 
+    |> classifyAccount
 
-let loadAccount owner accountId transactions = 
-    let initAccount : Account = { Id = accountId
-                                  Balance = 0m
-                                  Owner = owner}
+let loadAccount (owner, accountId, transactions) = 
+    let initAccount = InCredit(CreditAccount { 
+        Id = accountId
+        Balance = 0m
+        Owner = owner})
     transactions
     |> Seq.sortBy (fun t -> t.Timestamp)
     |> Seq.fold (fun account txn -> 
-        match txn.Operation with 
-        | Deposit -> deposit txn.Amount account |> fst
-        | Withdraw -> withdraw txn.Amount account |> fst
-        | Exit -> account
-        | Fail -> account
+        match txn.Operation, account with 
+        | Deposit, _ -> deposit txn.Amount account
+        | Withdraw, InCredit account -> withdraw txn.Amount account
+        | Withdraw, Overdrawn _ -> account
         ) initAccount

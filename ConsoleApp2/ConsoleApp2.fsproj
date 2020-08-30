@@ -4,9 +4,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Script1.fsx" />
-    <None Include="WebBrowser.fsx" />
-    <None Include="write.fsx" />
+    <None Include="scripts/cred.fsx" />
+    <None Include="scripts/composition.fsx" />
+    <None Include="scripts/test.fsx" />
+    <None Include="scripts/Monads.fsx" />
     <Compile Include="Domain.fs" />
     <Compile Include="Operations.fs" />
     <Compile Include="FileRepository.fs" />
