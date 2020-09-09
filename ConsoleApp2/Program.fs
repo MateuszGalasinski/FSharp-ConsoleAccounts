@@ -33,13 +33,14 @@ let tryGetAmount operation =
     |> Seq.head
 
 let processCommand (currentAccount:RatedAccount) (command, amount) =
-    let afterAccount = match command with
+    let afterAccount = 
+        match command with
         | Deposit -> currentAccount |> depositWithAudit command amount
         | Withdraw -> 
             match currentAccount with
             | InCredit account -> account |> withdrawWithAudit command amount
             | Overdrawn _ ->
-                printfn "Sorry, you have to pey the debts first!"
+                printfn "Sorry, you have to pay the debts first!"
                 currentAccount
     displayAccount afterAccount
     afterAccount
